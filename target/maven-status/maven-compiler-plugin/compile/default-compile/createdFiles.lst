@@ -1,0 +1,3 @@
+com/agorohov/notificationbot/NotificationBotApplication.class
+com/agorohov/notificationbot/configuration/TelegramBotConfiguration.class
+com/agorohov/notificationbot/listener/TelegramBotUpdatesListener.class
