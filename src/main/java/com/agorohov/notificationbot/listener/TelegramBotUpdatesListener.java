@@ -43,7 +43,9 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 SendMessage sendMessage;
                 if (update.message().text().equals("/start")) {
                     String firstName = update.message().chat().firstName();
-                    sendMessage = new SendMessage(chatId, "Привет, " + firstName + "!");
+                    sendMessage = new SendMessage(chatId, "Привет, " + firstName + "! " +
+                            "Чтобы установить напоминание, напиши сообщение в таком формате:\n" +
+                            "\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"");
                 } else {
                     sendMessage = new SendMessage(
                             chatId,
@@ -58,5 +60,4 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
         });
         return UpdatesListener.CONFIRMED_UPDATES_ALL;
     }
-
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,7 @@ public class NotificationTaskService {
         this.repository = repository;
     }
 
+    // Сделать вместо substring и trim Matcher.group(int group)
     public String createNotification(Long chatId, String text) {
         LocalDateTime notificationDate;
         String message;
@@ -45,6 +47,10 @@ public class NotificationTaskService {
                 + notificationDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 
+    public List<NotificationTask> getCurrentMinuteTasks(LocalDateTime currentMinute) {
+        return repository.getCurrentMinuteTasks(currentMinute);
+    }
+
     private void checkNotificationTextFormat(String text) {
         String pattern = "(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})(\\s+)(.+)";
         Pattern compiledPattern = Pattern.compile(pattern);
@@ -65,5 +71,9 @@ public class NotificationTaskService {
             throw new IllegalArgumentException("Переданная дата уже в прошлом");
         }
         return notificationDate;
+    }
+
+    public void deleteAllInBatch(List<NotificationTask> currentMinuteTasks) {
+        repository.deleteAllInBatch(currentMinuteTasks);
     }
 }
