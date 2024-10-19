@@ -1,5 +1,6 @@
 package com.agorohov.notificationbot.listener;
 
+import com.agorohov.notificationbot.service.NotificationTaskService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
@@ -21,6 +22,12 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     @Autowired
     private TelegramBot telegramBot;
 
+    private final NotificationTaskService service;
+
+    public TelegramBotUpdatesListener(NotificationTaskService service) {
+        this.service = service;
+    }
+
     @PostConstruct
     public void init() {
         telegramBot.setUpdatesListener(this);
@@ -30,13 +37,20 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     public int process(List<Update> updates) {
         updates.forEach(update -> {
             logger.info("Processing update: {}", update);
-            if (update.message() != null
-                    && update.message().text() != null
-                    && update.message().text().equals("/start")) {
-                Long id = update.message().chat().id();
-                String firstName = update.message().chat().firstName();
-                SendMessage message = new SendMessage(id, "Привет, " + firstName + "!");
-                SendResponse response = telegramBot.execute(message);
+            if (update.message() != null && update.message().text() != null) {
+                String userMessage = update.message().text();
+                Long chatId = update.message().chat().id();
+                SendMessage sendMessage;
+                if (update.message().text().equals("/start")) {
+                    String firstName = update.message().chat().firstName();
+                    sendMessage = new SendMessage(chatId, "Привет, " + firstName + "!");
+                } else {
+                    sendMessage = new SendMessage(
+                            chatId,
+                            service.createNotification(chatId, userMessage)
+                    );
+                }
+                SendResponse response = telegramBot.execute(sendMessage);
                 if (!response.isOk()) {
                     logger.error("Failed to send message: {}", response.description());
                 }
