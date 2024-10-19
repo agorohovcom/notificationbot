@@ -51,7 +51,8 @@ public class NotificationTaskService {
         Matcher matcher = compiledPattern.matcher(text);
 
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Сообщение не соответствует формату\n\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"");
+            throw new IllegalArgumentException("Сообщение не соответствует формату\n" +
+                    "\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"");
         }
     }
 
