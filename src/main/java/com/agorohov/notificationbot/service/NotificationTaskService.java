@@ -14,8 +14,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class NotificationTaskService {
-
-    Logger logger = LoggerFactory.getLogger(NotificationTaskService.class);
+    private final Logger logger = LoggerFactory.getLogger(NotificationTaskService.class);
 
     private final NotificationTaskRepository repository;
 
@@ -26,11 +25,12 @@ public class NotificationTaskService {
     // Сделать вместо substring и trim Matcher.group(int group)
     public String createNotification(Long chatId, String text) {
         LocalDateTime notificationDate;
-        String message;
+        String messageText;
+        String resultText;
         try {
             checkNotificationTextFormat(text);
             notificationDate = parseLocalDateTime(text.substring(0, 16));
-            message = text.substring(17).trim();
+            messageText = text.substring(17).trim();
         } catch (RuntimeException e) {
             return "Ошибка: " + e.getMessage();
         }
@@ -38,17 +38,21 @@ public class NotificationTaskService {
         NotificationTask task = new NotificationTask();
         task.setChatId(chatId);
         task.setSendingTime(notificationDate);
-        task.setMessageText(message);
+        task.setMessageText(messageText);
 
         repository.save(task);
         return "Напоминание с текстом:\n\""
-                + message
+                + messageText
                 + "\"\nустановлено на дату и время:\n"
                 + notificationDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 
     public List<NotificationTask> getCurrentMinuteTasks(LocalDateTime currentMinute) {
         return repository.getCurrentMinuteTasks(currentMinute);
+    }
+
+    public void deleteAllInBatch(List<NotificationTask> currentMinuteTasks) {
+        repository.deleteAllInBatch(currentMinuteTasks);
     }
 
     private void checkNotificationTextFormat(String text) {
@@ -71,9 +75,5 @@ public class NotificationTaskService {
             throw new IllegalArgumentException("Переданная дата уже в прошлом");
         }
         return notificationDate;
-    }
-
-    public void deleteAllInBatch(List<NotificationTask> currentMinuteTasks) {
-        repository.deleteAllInBatch(currentMinuteTasks);
     }
 }
