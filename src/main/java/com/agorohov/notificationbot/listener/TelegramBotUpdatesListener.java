@@ -20,7 +20,11 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     private final NotificationTaskService notificationTaskService;
     private final MessageService messageService;
 
-    public TelegramBotUpdatesListener(TelegramBot telegramBot, NotificationTaskService notificationTaskService, MessageService messageService) {
+    public TelegramBotUpdatesListener(
+            TelegramBot telegramBot,
+            NotificationTaskService notificationTaskService,
+            MessageService messageService
+    ) {
         this.telegramBot = telegramBot;
         this.notificationTaskService = notificationTaskService;
         this.messageService = messageService;
