@@ -103,7 +103,7 @@ public class NotificationTaskService {
         );
 
         if (notificationDate.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Переданная дата уже в прошлом");
+            throw new IllegalArgumentException("Переданные дата и время уже в прошлом");
         }
 
         return notificationDate;
