@@ -16,23 +16,37 @@ import java.util.regex.Pattern;
 public class NotificationTaskService {
     private final Logger logger = LoggerFactory.getLogger(NotificationTaskService.class);
 
+    private final TelegramApiService telegramApiService;
     private final NotificationTaskRepository repository;
 
-    public NotificationTaskService(NotificationTaskRepository repository) {
+    public NotificationTaskService(TelegramApiService telegramApiService, NotificationTaskRepository repository) {
+        this.telegramApiService = telegramApiService;
         this.repository = repository;
     }
 
-    // Сделать вместо substring и trim Matcher.group(int group)
-    public String createNotification(Long chatId, String text) {
+    /**
+     * Сперва метод проверяет, соответствует ли userMessage пользователя формату "ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения".
+     * Если не соответствует - отправляется сообщение об ошибке.
+     * Если дата в userMessage меньше текущей даты, отправляется сообщение об ошибке.
+     * Создаётся объект NotificationTask, данные сохраняются в БД.
+     * Пользователь получает сообщение об успешном добавлении напоминания.
+     *
+     * @param chatId      - id пользователя в Telegram
+     * @param userMessage - сообщение от пользователя
+     */
+    public void createNotification(Long chatId, String userMessage) {
+        Matcher matcher;
         LocalDateTime notificationDate;
         String messageText;
-        String resultText;
         try {
-            checkNotificationTextFormat(text);
-            notificationDate = parseLocalDateTime(text.substring(0, 16));
-            messageText = text.substring(17).trim();
+            matcher = gerUserMessageMatcher(userMessage);
+            notificationDate = parseLocalDateTime(matcher.group(1));
+            messageText = matcher.group(3);
         } catch (RuntimeException e) {
-            return "Ошибка: " + e.getMessage();
+            String exceptionString = "Ошибка: " + e.getMessage();
+            telegramApiService.sendMessage(chatId, exceptionString);
+            logger.error(exceptionString);
+            return;
         }
 
         NotificationTask task = new NotificationTask();
@@ -41,29 +55,45 @@ public class NotificationTaskService {
         task.setMessageText(messageText);
 
         repository.save(task);
-        return "Напоминание с текстом:\n\""
+        logger.info("Напоминание сохранено: {}", task);
+
+        String responseMessage = "Напоминание с текстом: \""
                 + messageText
-                + "\"\nустановлено на дату и время:\n"
+                + "\" установлено на дату и время: "
                 + notificationDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        telegramApiService.sendMessage(chatId, responseMessage);
     }
 
+    /**
+     * Метод возвращает список объектов NotificationTask, у которых время в поле sendingTime
+     * равно переданному параметру currentMinute.
+     * @param currentMinute время с точностью до минуты
+     * @return объектов NotificationTask, у которых время в поле sendingTime
+     * равно переданному параметру currentMinute.
+     */
     public List<NotificationTask> getCurrentMinuteTasks(LocalDateTime currentMinute) {
         return repository.getCurrentMinuteTasks(currentMinute);
     }
 
+    /**
+     * Инициализирует удаление всех записей, соответствующих сущностям из переданного списка currentMinuteTasks.
+     * @param currentMinuteTasks список сущностей, соответствующие которым записи в БД должны быть удалены пакетно.
+     */
     public void deleteAllInBatch(List<NotificationTask> currentMinuteTasks) {
         repository.deleteAllInBatch(currentMinuteTasks);
     }
 
-    private void checkNotificationTextFormat(String text) {
+    private Matcher gerUserMessageMatcher(String text) {
         String pattern = "(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})(\\s+)(.+)";
         Pattern compiledPattern = Pattern.compile(pattern);
         Matcher matcher = compiledPattern.matcher(text);
 
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Сообщение не соответствует формату\n" +
+            throw new IllegalArgumentException("Сообщение не соответствует формату " +
                     "\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"");
         }
+
+        return matcher;
     }
 
     private LocalDateTime parseLocalDateTime(String stringDate) {
@@ -71,9 +101,11 @@ public class NotificationTaskService {
                 stringDate,
                 DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
         );
+
         if (notificationDate.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Переданная дата уже в прошлом");
         }
+
         return notificationDate;
     }
 }

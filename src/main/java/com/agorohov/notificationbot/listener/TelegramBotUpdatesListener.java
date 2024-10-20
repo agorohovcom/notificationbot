@@ -20,11 +20,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     private final NotificationTaskService notificationTaskService;
     private final MessageService messageService;
 
-    public TelegramBotUpdatesListener(
-            TelegramBot telegramBot,
-            NotificationTaskService notificationTaskService,
-            MessageService messageService
-    ) {
+    public TelegramBotUpdatesListener(TelegramBot telegramBot, NotificationTaskService notificationTaskService, MessageService messageService) {
         this.telegramBot = telegramBot;
         this.notificationTaskService = notificationTaskService;
         this.messageService = messageService;
@@ -38,10 +34,10 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     @Override
     public int process(List<Update> updates) {
         updates.forEach(update -> {
-            logger.info("Получен update: {}", update);
+            logger.info("Получен объект update: {}", update);
             if (update.message() != null && update.message().text() != null) {
-                String userMessage = update.message().text();
                 Long chatId = update.message().chat().id();
+                String userMessage = update.message().text();
                 if (userMessage.equals("/start")) {
                     String firstName = update.message().chat().firstName();
                     messageService.responseToStartMessage(chatId, firstName);

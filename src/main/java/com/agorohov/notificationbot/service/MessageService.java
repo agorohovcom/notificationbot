@@ -1,9 +1,6 @@
 package com.agorohov.notificationbot.service;
 
 import com.agorohov.notificationbot.model.NotificationTask;
-import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.request.SendMessage;
-import com.pengrad.telegrambot.response.SendResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,11 +14,11 @@ import java.util.List;
 public class MessageService {
     private final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
-    private final TelegramBot telegramBot;
+    private final TelegramApiService telegramApiService;
     private final NotificationTaskService notificationTaskService;
 
-    public MessageService(TelegramBot telegramBot, NotificationTaskService notificationTaskService) {
-        this.telegramBot = telegramBot;
+    public MessageService(TelegramApiService telegramApiService, NotificationTaskService notificationTaskService) {
+        this.telegramApiService = telegramApiService;
         this.notificationTaskService = notificationTaskService;
     }
 
@@ -32,24 +29,11 @@ public class MessageService {
      * @param firstName имя пользователя Telegram
      */
     public void responseToStartMessage(Long chatId, String firstName) {
+        logger.info("Получено сообщение {} от пользователя с id={}", "\"/start\"", chatId);
         String startMessage = "Привет, " + firstName + "! " +
                 "Чтобы установить напоминание, напиши сообщение в таком формате:\n" +
                 "\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"";
-        sendMessage(chatId, startMessage);
-    }
-
-    /**
-     * Отправляет пользователю с переданным chatId сообщение с текстом messageText.
-     *
-     * @param chatId      id пользователя в Telegram
-     * @param messageText текст отправляемого сообщения
-     */
-    public void sendMessage(Long chatId, String messageText) {
-        SendMessage sendMessage = new SendMessage(chatId, messageText);
-        SendResponse response = telegramBot.execute(sendMessage);
-        if (!response.isOk()) {
-            logger.error("Ошибка отправки сообщения: {}", response.description());
-        }
+        telegramApiService.sendMessage(chatId, startMessage);
     }
 
     /**
@@ -64,12 +48,16 @@ public class MessageService {
      */
     @Scheduled(cron = "0 */1 * * * *")
     public void sendCurrentMinuteNotifications() {
+        logger.info("Метод {} начал работу", "sendCurrentMinuteNotifications");
+
         LocalDateTime currentMinute = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
         List<NotificationTask> currentMinuteTasks = notificationTaskService.getCurrentMinuteTasks(currentMinute);
 
         for (NotificationTask task : currentMinuteTasks) {
-            sendMessage(task.getChatId(), task.getMessageText());
+            telegramApiService.sendMessage(task.getChatId(), task.getMessageText());
         }
+
+        logger.info("На текущую минуту отправлено {} напоминаний", currentMinuteTasks.size());
 
         notificationTaskService.deleteAllInBatch(currentMinuteTasks);
     }
