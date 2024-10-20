@@ -31,7 +31,7 @@ public class MessageService {
     public void responseToStartMessage(Long chatId, String firstName) {
         logger.info("Получено сообщение {} от пользователя с id={}", "\"/start\"", chatId);
         String startMessage = "Привет, " + firstName + "! " +
-                "Чтобы установить напоминание, напиши сообщение в таком формате:\n" +
+                "Чтобы установить напоминание, напиши сообщение в таком формате: " +
                 "\"ДД.ММ.ГГГГ ЧЧ:ММ Текст сообщения\"";
         telegramApiService.sendMessage(chatId, startMessage);
     }
