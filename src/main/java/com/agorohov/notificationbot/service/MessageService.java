@@ -42,7 +42,7 @@ public class MessageService {
      * текучее время с точностью до минуты, затем передаёт эту минуту как аргумент
      * в notificationTaskService.getCurrentMinuteTasks(currentMinute) и получает
      * список NotificationTask с временем отправки, совпадающим с currentMinute.
-     * Сообщения из каждого полученного NotificationTask рассылаются получателям с указанными chatId.
+     * Сообщения из каждого полученного NotificationTask рассылаются получателям с соответствующими chatId.
      * Затем вызывается метод notificationTaskService.deleteAllInBatch(currentMinuteTasks), который инициализирует
      * удаление из БД всех записей, полученных вызовом notificationTaskService.getCurrentMinuteTasks(currentMinute).
      */
